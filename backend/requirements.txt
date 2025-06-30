@@ -1,0 +1,10 @@
+fastapi==0.104.1           # Web framework for building APIs
+uvicorn[standard]==0.24.0  # Server to run FastAPI
+sqlalchemy==2.0.23         # Database toolkit (ORM)
+psycopg2-binary==2.9.9     # PostgreSQL connector
+pydantic==2.5.0            # Data validation
+python-jose[cryptography]==3.3.0  # JWT token handling
+passlib[bcrypt]==1.7.4     # Password hashing
+python-multipart==0.0.6    # Handle form data
+python-dotenv==1.0.0       # Load environment variables
+email-validator==2.1.0     # Validate email addresses
