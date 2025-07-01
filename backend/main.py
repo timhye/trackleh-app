@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from database import engine
+from database import SessionLocal, engine
 import models
 from routers import auth, categories, transactions
 
@@ -16,7 +16,31 @@ app.include_router(categories.router, prefix = "/categories", tags = ["Categorie
 #Startup event to automatically create tables
 @app.on_event("startup")
 async def create_tables():
+    #Creation of tables
     models.Base.metadata.create_all(bind=engine)
+
+    #Then seed data
+    db = SessionLocal()
+    try:
+        #Only seed if categories table is empty
+        if db.query(models.Category).count() == 0:
+            categories = [
+                models.Category(name = "Food"),
+                models.Category(name = "Transport"),
+                models.Category(name = "Shopping"),
+                models.Category(name = "Entertainment"),
+                models.Category(name = "Bills"),
+                models.Category(name = "Other")
+            ]
+            db.add_all(categories)
+            db.commit()
+            print("Default categories seeded in successfully")
+    
+    except Exception as e:
+        print(f"Error seeding data {e}")
+        db.rollback()
+    finally:
+        db.close()
 
     
 #Root endpoint
