@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+
 from database import SessionLocal, engine
 import models
 from routers import auth, categories, transactions
