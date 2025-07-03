@@ -5,5 +5,5 @@ from pydantic import BaseModel, Field
 
 
 class UserCreate(BaseModel):
-    username: str
-    password: str
+    username: str = Field(min_length= 6, max_length= 10)
+    password: str = Field(min_length = 6, max_length = 10)

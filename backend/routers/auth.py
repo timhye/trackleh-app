@@ -3,10 +3,10 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from starlette import status
 
-from database import get_db
-from models import Users
-from schemas import UserCreate, Token
-from utils.auth_utils import hash_password, verify_password, create_access_token
+from backend.database import get_db
+from backend.models import Users
+from backend.schemas import UserCreate, Token
+from backend.utils.auth_utils import hash_password, verify_password, create_access_token
 
 
 
