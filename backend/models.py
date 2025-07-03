@@ -1,7 +1,8 @@
 from sqlalchemy import Column, Integer, String, Boolean, Float, DECIMAL, DateTime, Date, ForeignKey
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
 
-from database import Base
+from backend.database import Base
 
 
 class Users(Base):
@@ -17,6 +18,9 @@ class Users(Base):
     #role = Column(String)
     created_at = Column(DateTime, default = func.now())
     updated_at = Column(DateTime, default = func.now(), onupdate = func.now())
+    
+    transactions = relationship("Transactions", back_populates="user")
+
 
 
 
@@ -32,6 +36,9 @@ class Transactions(Base):
     user_id = Column(Integer, ForeignKey('users.id'), index = True)
     category_id = Column(Integer, ForeignKey('categories.id'), index = True)
 
+    user = relationship("Users", back_populates = "transactions")
+    
+    category = relationship("Category", back_populates = "transactions")
 
 
 class Category(Base):
@@ -42,3 +49,4 @@ class Category(Base):
     created_at = Column(DateTime, default = func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
+    transactions = relationship("Transactions", back_populates = "category")
