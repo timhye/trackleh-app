@@ -1,10 +1,13 @@
+import os
+from dotenv import load_dotenv
+load_dotenv(dotenv_path = r"C:\Users\user\Desktop\trackleh-app\backend\.env")
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
-import os
-from dotenv import load_dotenv
 
-load_dotenv()
+
+
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 

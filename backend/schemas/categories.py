@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional
+
+from pydantic import BaseModel, Field, ConfigDict
 
 # Both request and response schemas in the same file
 
@@ -12,9 +13,11 @@ from typing import Optional
     
 
 class CategoryResponse(BaseModel):
+    model_config = ConfigDict(from_attributes = True)
+
     id: int
     name: str
     #created_at: datetime # Not needed yet unless for future use involving custom categories
     
-    class Config:
-        from_attributes = True
+    ##class Config:(DEPRECATED)
+        ##from_attributes = True

@@ -8,3 +8,4 @@ passlib[bcrypt]==1.7.4     # Password hashing
 python-multipart==0.0.6    # Handle form data
 python-dotenv==1.0.0       # Load environment variables
 email-validator==2.1.0     # Validate email addresses
+bcrypt==4.0.1

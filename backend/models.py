@@ -1,20 +1,26 @@
-from database import Base
 from sqlalchemy import Column, Integer, String, Boolean, Float, DECIMAL, DateTime, Date, ForeignKey
 from sqlalchemy.sql import func
+from sqlalchemy.orm import relationship
+
+from backend.database import Base
 
 
 class Users(Base):
     __tablename__ = 'users'
 
+    #some attributes will be left out for this mvp
     id = Column(Integer, primary_key = True)
-    firstname = Column(String)
-    lastname = Column(String)
+    #firstname = Column(String)
+    #lastname = Column(String)
     username = Column(String, unique = True) ##Might be changed to email in the future or might just add new col
     hashed_password = Column(String)
     is_active = Column(Boolean, default = True)
-    role = Column(String)
+    #role = Column(String)
     created_at = Column(DateTime, default = func.now())
     updated_at = Column(DateTime, default = func.now(), onupdate = func.now())
+    
+    transactions = relationship("Transactions", back_populates="user")
+
 
 
 
@@ -30,6 +36,9 @@ class Transactions(Base):
     user_id = Column(Integer, ForeignKey('users.id'), index = True)
     category_id = Column(Integer, ForeignKey('categories.id'), index = True)
 
+    user = relationship("Users", back_populates = "transactions")
+    
+    category = relationship("Category", back_populates = "transactions")
 
 
 class Category(Base):
@@ -40,3 +49,4 @@ class Category(Base):
     created_at = Column(DateTime, default = func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
+    transactions = relationship("Transactions", back_populates = "category")
