@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, Float, DECIMAL, DateTime, Date, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, Float, DECIMAL, DateTime, Date, ForeignKey, UniqueConstraint
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
@@ -35,10 +35,15 @@ class Transactions(Base):
     updated_at = Column(DateTime, default = func.now(), onupdate = func.now()) ##onupdate to update timestamp automatically when record is modified
     user_id = Column(Integer, ForeignKey('users.id'), index = True)
     category_id = Column(Integer, ForeignKey('categories.id'), index = True)
+    idempotency_key = Column(String, nullable= False)
 
     user = relationship("Users", back_populates = "transactions")
     
     category = relationship("Category", back_populates = "transactions")
+    
+    __table_args__ = (
+        UniqueConstraint('user_id','idempotency_key',name = 'uq_user_idempotency'),
+    )
 
 
 class Category(Base):
