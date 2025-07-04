@@ -8,11 +8,15 @@ from sqlalchemy.orm import sessionmaker
 
 
 
+def get_engine_and_session(database_url=None):
+    if database_url is None:
+        database_url = os.getenv("DATABASE_URL")
+        print(database_url)
+    engine = create_engine(database_url)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    return engine, SessionLocal
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+engine, SessionLocal = get_engine_and_session()
 
 Base = declarative_base()
 
