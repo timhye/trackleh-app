@@ -1,5 +1,5 @@
 from dotenv import load_dotenv
-load_dotenv(dotenv_path="tests/.env.test")
+load_dotenv(dotenv_path=r"C:\Users\user\Desktop\trackleh-app\tests\.env.test")
 import os
 
 from sqlalchemy import create_engine
@@ -9,23 +9,14 @@ import pytest
 
 from backend.models import Base
 from backend.main import app
-from backend.database import get_db
+from backend.database import get_db, get_engine_and_session
 
 
 
-TEST_DATABASE_URL = os.getenv("DATABASE_URL")
+TEST_DATABASE_URL = os.getenv("TEST_DATABASE_URL")
+engine, TestingSessionLocal = get_engine_and_session(TEST_DATABASE_URL)
+print(TEST_DATABASE_URL)
 
-from sqlalchemy import create_engine
-import os
-
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-if DATABASE_URL.startswith("sqlite"):
-    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
-else:
-    engine = create_engine(DATABASE_URL)
-
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 @pytest.fixture(scope="function")
 def db_session():

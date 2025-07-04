@@ -1,4 +1,9 @@
+import os
+
 import pytest
+
+from tests.conftest import TEST_DATABASE_URL
+
 
 
 
@@ -50,3 +55,7 @@ def test_invalid_username(client, db_session):
     assert response.status_code == 422
     data = response.json()
     assert data["detail"][0]["msg"] == "String should have at least 6 characters"
+    
+    
+def test_using_test_db():
+    assert TEST_DATABASE_URL != os.getenv("DATABASE_URL")
