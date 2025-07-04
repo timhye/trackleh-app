@@ -1,12 +1,14 @@
 from logging.config import fileConfig
 import os
+import sys
 from dotenv import load_dotenv
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
 
-from models import Base
+from backend.models import Base
 
 load_dotenv()
 

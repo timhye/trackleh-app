@@ -20,6 +20,7 @@ class TransactionRequest(BaseModel):
     
 class TransactionResponse(BaseModel):
     model_config = ConfigDict(from_attributes = True)
+    id: int
     amt: Decimal = Field(decimal_places = 2)
     description: str = Field(max_length = 100)
     transaction_date : date
