@@ -1,7 +1,7 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session, joinedload
 
 from backend.database import get_db
@@ -95,7 +95,7 @@ async def get_all_transactions(db: Session = Depends(get_db),
     #     print(f"Database error: {e}")  # This will show the actual error
     #     raise HTTPException(status_code = 401, detail = f"Entry already sent! Error: {str(e)}")
     #//////////////////////////
-    transaction_list = db.query(Transactions).options(joinedload(Transactions.category)).filter(Transactions.user_id == current_user.id)
+    transaction_list = db.query(Transactions).options(joinedload(Transactions.category)).filter(Transactions.user_id == current_user.id).order_by(Transactions.transaction_date.desc()).all()
     
     response = [
         transactions.TransactionResponse(
@@ -112,6 +112,7 @@ async def get_all_transactions(db: Session = Depends(get_db),
     
     
     return response
+
 
 @router.get("/{transaction_id}", response_model = transactions.TransactionResponse)
 async def get_specific_transaction(transaction_id : int, db: Session = Depends(get_db),
@@ -141,3 +142,86 @@ async def get_specific_transaction(transaction_id : int, db: Session = Depends(g
     
     return response
        
+
+@router.post("/")
+async def create_transaction(entry: transactions.TransactionRequest,
+                             idempotency_key: str = Header(...,alias="Idempotency-Key"),
+                             db: Session = Depends(get_db),
+                             current_user: user.UserResponse = Depends(get_current_user)
+                             ):
+    
+    existing_transaction = db.query(Transactions).filter(
+        Transactions.user_id == current_user.id,
+        Transactions.idempotency_key  == idempotency_key
+    ).first()
+    
+    if existing_transaction:
+        return existing_transaction#idempotent behavior
+
+    try:
+        submission = Transactions(
+            amt = entry.amt,
+            type = entry.type,
+            description = entry.description,
+            user_id = current_user.id,
+            category_id = entry.category_id,
+            transaction_date = entry.transaction_date,
+            idempotency_key = idempotency_key
+            ##Keep in mind idempotency key and category id is to be generated and passed in byclient
+        )
+    
+        db.add(submission)
+        db.commit()
+        db.refresh(submission)
+        return submission
+    
+    except Exception as e:
+        print(f"Database error: {e}")  # This will show the actual error
+        raise HTTPException(status_code = 400, detail = "Error in logging transaction")
+        
+@router.put("/{transaction_id}")
+async def update_transaction(
+                             entry: transactions.TransactionRequest,
+                             transaction_id: int,
+                             db: Session = Depends(get_db),
+                             current_user: user.UserResponse = Depends(get_current_user)
+):
+    existing_transaction = db.query(Transactions).filter(current_user.id == Transactions.user_id, transaction_id == Transactions.id).first()
+    
+    if not existing_transaction:
+        raise HTTPException(status_code = 404, detail = "Transaction not found")
+    
+    try:
+            existing_transaction.amt = entry.amt
+            existing_transaction.description = entry.description
+            existing_transaction.transaction_date = entry.transaction_date
+            existing_transaction.type = entry.type
+            existing_transaction.category_id = entry.category_id
+            existing_transaction.updated_at = datetime.now(timezone.utc)
+            
+            db.commit()
+            db.refresh(existing_transaction)
+            
+            return existing_transaction
+    
+    except Exception as e:
+        db.rollback()
+        print(e)
+        raise HTTPException(status_code = 401, detail = "Transaction not found")
+                
+
+    
+@router.delete("/{transaction_id}")
+async def delete_transaction(
+                              transaction_id: int,
+                              db: Session = Depends(get_db),
+                              current_user: user.UserResponse = Depends(get_current_user)
+                                
+):
+    delete_count = db.query(Transactions).filter(transaction_id == Transactions.id, current_user.id == Transactions.user_id).delete()
+    if not delete_count:
+        raise HTTPException(status_code = 404, detail = "Transaction not found")
+    
+    db.commit()
+    return {"message": "Transaction deleted successfully"}
+    
