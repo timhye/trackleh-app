@@ -1,10 +1,17 @@
-from sqlalchemy import Column, Integer, String, Boolean, Float, DECIMAL, DateTime, Date, ForeignKey, UniqueConstraint
+import enum
+
+from sqlalchemy import Column, Integer, String, Boolean, Float, DECIMAL, DateTime, Date, ForeignKey, UniqueConstraint, Enum
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
 from backend.database import Base
 
 
+class TransactionType(enum.Enum):
+    INCOME = "income"
+    EXPENSE = "expense"
+    
+    
 class Users(Base):
     __tablename__ = 'users'
 
@@ -29,13 +36,17 @@ class Transactions(Base):
 
     id = Column(Integer, primary_key = True)
     amt = Column(DECIMAL(12,2))
+    type = Column(
+        Enum(TransactionType, values_callable=lambda x: [e.value for e in x]),
+        nullable=False, 
+        index=True)
     description = Column(String)
     transaction_date = Column(Date, index = True)
     created_at = Column(DateTime, default = func.now())
     updated_at = Column(DateTime, default = func.now(), onupdate = func.now()) ##onupdate to update timestamp automatically when record is modified
     user_id = Column(Integer, ForeignKey('users.id'), index = True)
     category_id = Column(Integer, ForeignKey('categories.id'), index = True)
-    idempotency_key = Column(String, nullable= False)
+    idempotency_key = Column(String, nullable= False)  ## To be generated and given by client
 
     user = relationship("Users", back_populates = "transactions")
     

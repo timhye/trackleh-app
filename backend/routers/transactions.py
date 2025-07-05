@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -12,6 +13,65 @@ from backend.utils.dependencies import get_current_user
 router = APIRouter()
 
 
+@router.get("/search")
+async def get_filtered_transactions(db: Session = Depends(get_db),
+                                    current_user: user.UserResponse = Depends(get_current_user),
+                                    filters: transactions.TransactionFilters = Depends()):
+
+    query = db.query(Transactions).filter(Transactions.user_id == current_user.id)
+     
+    if filters.days_from_today:
+        cutoff_date = datetime.now() - timedelta(days = filters.days_from_today )
+        query = query.filter(Transactions.transaction_date >= cutoff_date)
+         
+    if filters.category:
+        query = query.filter(Transactions.category_id == filters.category)
+
+    if filters.type:
+        query = query.filter(Transactions.type == filters.type)
+        
+    if filters.search:
+        query = query.filter(Transactions.description.ilike(f"%{filters.search}%"))
+        
+    total_count = query.count()
+    
+    query = query.order_by(Transactions.transaction_date.desc())
+    offset = (filters.page - 1) * filters.limit
+    result = query.offset(offset).limit(filters.limit).all()
+
+    total_pages = (total_count + filters.limit - 1) // filters.limit
+    
+    has_next = filters.page < total_pages
+    
+    has_prev = filters.page > 1
+    
+    response = [
+        transactions.TransactionResponse(
+            
+            id = txn.id,
+            amt = txn.amt,
+            type = txn.type,
+            category_name = txn.category.name,
+            description = txn.description,
+            transaction_date = txn.transaction_date,
+               
+        ) for txn in result
+    ]
+    
+    return {
+        "transactions": response,
+        "pagination": {
+            "current_page": filters.page,
+            "total_pages": total_pages,
+            "total_count": total_count,
+            "has_next": has_next,
+            "has_prev": has_prev,
+            "page_size": filters.limit
+        }
+    }
+    
+            
+        
 @router.get("/", response_model = List[transactions.TransactionResponse])
 async def get_all_transactions(db: Session = Depends(get_db),
                                current_user: user.UserResponse = Depends(get_current_user)):
@@ -19,12 +79,13 @@ async def get_all_transactions(db: Session = Depends(get_db),
     #/////DOESNT ALLOW PYTEST TEST TO PASS IF THIS IS UNCOMMENTED
     # try:
     #     txn = Transactions(
-    #         amt=400.00,
-    #         description="Test Transaction 7",
-    #         transaction_date="2025-03-01",
+    #         amt=4000.00,
+    #         type = "expense",
+    #         description="Test Transaction 69",
+    #         transaction_date="2026-07-01",
     #         user_id = current_user.id,
-    #         category_id = 5,
-    #         idempotency_key = "6"
+    #         category_id = 2,
+    #         idempotency_key = "3695"
 
             
     #     )
@@ -33,7 +94,7 @@ async def get_all_transactions(db: Session = Depends(get_db),
     # except Exception as e:
     #     print(f"Database error: {e}")  # This will show the actual error
     #     raise HTTPException(status_code = 401, detail = f"Entry already sent! Error: {str(e)}")
-    
+    #//////////////////////////
     transaction_list = db.query(Transactions).options(joinedload(Transactions.category)).filter(Transactions.user_id == current_user.id)
     
     response = [
@@ -41,6 +102,7 @@ async def get_all_transactions(db: Session = Depends(get_db),
             
             id = txn.id,
             amt = txn.amt,
+            type = txn.type,
             category_name = txn.category.name,
             description = txn.description,
             transaction_date = txn.transaction_date,
@@ -64,6 +126,7 @@ async def get_specific_transaction(transaction_id : int, db: Session = Depends(g
         
         id = specific_transaction.id,
         amt = specific_transaction.amt,
+        type = specific_transaction.type,
         category_name = specific_transaction.category.name,
         description = specific_transaction.description,
         transaction_date = specific_transaction.transaction_date
