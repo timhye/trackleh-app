@@ -1,10 +1,17 @@
-from sqlalchemy import Column, Integer, String, Boolean, Float, DECIMAL, DateTime, Date, ForeignKey
+import enum
+
+from sqlalchemy import Column, Integer, String, Boolean, Float, DECIMAL, DateTime, Date, ForeignKey, UniqueConstraint, Enum
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
 from backend.database import Base
 
 
+class TransactionType(enum.Enum):
+    INCOME = "income"
+    EXPENSE = "expense"
+    
+    
 class Users(Base):
     __tablename__ = 'users'
 
@@ -29,24 +36,43 @@ class Transactions(Base):
 
     id = Column(Integer, primary_key = True)
     amt = Column(DECIMAL(12,2))
+    type = Column(
+        Enum(TransactionType, values_callable=lambda x: [e.value for e in x]),
+        nullable=False, 
+        index=True)
     description = Column(String)
     transaction_date = Column(Date, index = True)
     created_at = Column(DateTime, default = func.now())
     updated_at = Column(DateTime, default = func.now(), onupdate = func.now()) ##onupdate to update timestamp automatically when record is modified
     user_id = Column(Integer, ForeignKey('users.id'), index = True)
     category_id = Column(Integer, ForeignKey('categories.id'), index = True)
+    idempotency_key = Column(String, nullable= False)  ## To be generated and given by client
 
     user = relationship("Users", back_populates = "transactions")
     
     category = relationship("Category", back_populates = "transactions")
+    
+    __table_args__ = (
+        UniqueConstraint('user_id','idempotency_key',name = 'uq_user_idempotency'),
+    )
 
 
 class Category(Base):
     __tablename__ = 'categories'
 
     id = Column(Integer, primary_key = True)
-    name = Column(String, unique = True)
+    name = Column(String, unique = False)
+    transaction_type = Column(
+        Enum(TransactionType, values_callable = lambda x: [e.value for e in x]),
+        nullable = False,
+        index = True
+        )
     created_at = Column(DateTime, default = func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
     transactions = relationship("Transactions", back_populates = "category")
+    
+    __table_args__ = (
+        UniqueConstraint('name', 'transaction_type', 
+                         name = 'uq_category_name_type'),
+    )

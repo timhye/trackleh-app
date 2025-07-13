@@ -22,11 +22,11 @@ async def get_current_user(
     if not payload:
         raise credentials_exception
     
-    username: str = payload.get("sub")
-    if not username:
+    user_id : int = payload.get("sub")
+    if not user_id:
         raise credentials_exception
     
-    user = db.query(Users).filter(Users.username == username).first()
+    user = db.query(Users).filter(Users.id == user_id).first()
     if not user:
         raise credentials_exception
     
