@@ -4,7 +4,7 @@ from fastapi import FastAPI
 
 from backend.database import SessionLocal, engine
 from backend import models
-from backend.routers import auth, categories, transactions, users
+from backend.routers import auth, categories, transactions, users, analytics
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -53,6 +53,7 @@ app.include_router(auth.router, prefix="/auth", tags = ["Authentication"])
 app.include_router(transactions.router, prefix = "/transactions", tags = ["Transactions"])
 app.include_router(categories.router, prefix = "/categories", tags = ["Categories"])
 app.include_router(users.router, prefix = "/user", tags = ["Users"])
+app.include_router(analytics.router, prefix = "/analytics", tags = ["Analytics"])
 
 #Root endpoint
 @app.get("/")
