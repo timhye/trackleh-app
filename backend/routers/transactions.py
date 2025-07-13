@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Header
 from sqlalchemy.orm import Session, joinedload
 
 from backend.database import get_db
-from backend.models import Transactions, Users
+from backend.models import Transactions, Users, Category
 from backend.schemas import transactions, user
 from backend.utils.dependencies import get_current_user
 
@@ -158,6 +158,10 @@ async def create_transaction(entry: transactions.TransactionRequest,
     if existing_transaction:
         return existing_transaction#idempotent behavior
 
+    check = db.query(Category).filter(Category.id == entry.category_id).first()
+    if check.transaction_type != entry.type:
+        raise HTTPException(status_code = 422, detail = "Mismatch of category and transaction type")
+    
     try:
         submission = Transactions(
             amt = entry.amt,
@@ -190,6 +194,10 @@ async def update_transaction(
     
     if not existing_transaction:
         raise HTTPException(status_code = 404, detail = "Transaction not found")
+    
+    check = db.query(Category).filter(Category.id == entry.category_id).first()
+    if check.transaction_type != entry.type:
+        raise HTTPException(status_code = 422, detail = "Mismatch of category and transaction type")
     
     try:
             existing_transaction.amt = entry.amt

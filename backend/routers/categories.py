@@ -1,6 +1,6 @@
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from backend.database import get_db
@@ -11,10 +11,18 @@ from backend.utils.dependencies import get_current_user
 router = APIRouter()
 
 @router.get("/", response_model = List[categories.CategoryResponse])
-async def get_categories(db: Session = Depends(get_db),
+async def get_categories(type: Optional[str] = Query(None, regex="^(income|expense)$"),
+                         db: Session = Depends(get_db),
                          current_user : user.UserResponse = Depends(get_current_user)):
-    categories = db.query(models.Category).all()
-    return categories
+    
+    categories = db.query(models.Category)
+    
+    if type:
+        categories = categories.filter(models.Category.transaction_type == type)
+    
+    response = categories.all()
+    
+    return response
     
 @router.get("/{category_id}", response_model = categories.CategoryResponse)
 async def get_category(category_id: int, db: Session = Depends(get_db),

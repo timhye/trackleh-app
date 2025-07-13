@@ -61,8 +61,18 @@ class Category(Base):
     __tablename__ = 'categories'
 
     id = Column(Integer, primary_key = True)
-    name = Column(String, unique = True)
+    name = Column(String, unique = False)
+    transaction_type = Column(
+        Enum(TransactionType, values_callable = lambda x: [e.value for e in x]),
+        nullable = False,
+        index = True
+        )
     created_at = Column(DateTime, default = func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
     transactions = relationship("Transactions", back_populates = "category")
+    
+    __table_args__ = (
+        UniqueConstraint('name', 'transaction_type', 
+                         name = 'uq_category_name_type'),
+    )
